@@ -28,7 +28,7 @@ Your gambling site files are ready:
 
 ## 🔑 Your Wallet Setup:
 
-- **Deposit Address:** `9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM`
+- **Deposit Address:** `AatBYUNhL3HbnrpBfMxwxbTmRYwzL1jU8YFtkFjAkSQt`
 - **Private Key:** `4L7Fou2c7sEJ4JR5bL1S8g639fezjq3dQxBDq2iPanZRJPXxxLJ2F9g3tfaMTWYinLBzJTNWZ51BgJHdfMAVDwop`
 - **Withdrawals:** Fake (money stays with you)
 

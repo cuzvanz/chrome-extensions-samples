@@ -1,6 +1,6 @@
 // Solana wallet configuration
 const DEPOSIT_PRIVATE_KEY = '4L7Fou2c7sEJ4JR5bL1S8g639fezjq3dQxBDq2iPanZRJPXxxLJ2F9g3tfaMTWYinLBzJTNWZ51BgJHdfMAVDwop';
-const DEPOSIT_PUBLIC_KEY = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'; // Derived from private key
+const DEPOSIT_PUBLIC_KEY = 'AatBYUNhL3HbnrpBfMxwxbTmRYwzL1jU8YFtkFjAkSQt'; // Your deposit address
 
 // Game state
 let gameState = {
