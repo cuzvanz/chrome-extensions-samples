@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stake.gg - Online Casino Games</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="logo">
+                    <h1>Stake.gg</h1>
+                </div>
+                <nav class="nav">
+                    <button class="nav-btn active" data-game="crash">
+                        <i class="fas fa-chart-line"></i>
+                        Crash
+                    </button>
+                    <button class="nav-btn" data-game="mines">
+                        <i class="fas fa-bomb"></i>
+                        Mines
+                    </button>
+                    <button class="nav-btn" data-game="wheel">
+                        <i class="fas fa-circle-notch"></i>
+                        Wheel
+                    </button>
+                </nav>
+                <div class="wallet">
+                    <div class="balance">
+                        <i class="fas fa-coins"></i>
+                        <span id="balance">0.00</span> SOL
+                    </div>
+                    <button class="wallet-btn" id="connect-wallet">
+                        <i class="fas fa-wallet"></i>
+                        Connect Wallet
+                    </button>
+                    <button class="wallet-btn hidden" id="deposit-btn">
+                        <i class="fas fa-plus"></i>
+                        Deposit
+                    </button>
+                    <button class="wallet-btn hidden" id="withdraw-btn">
+                        <i class="fas fa-minus"></i>
+                        Withdraw
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="container">
+                <!-- Crash Game -->
+                <div class="game-container active" id="crash-game">
+                    <div class="game-header">
+                        <h2>Crash</h2>
+                        <p>Cash out before the rocket crashes!</p>
+                    </div>
+                    <div class="crash-display">
+                        <div class="crash-chart">
+                            <canvas id="crash-canvas"></canvas>
+                            <div class="multiplier" id="crash-multiplier">1.00x</div>
+                            <div class="rocket" id="rocket">🚀</div>
+                        </div>
+                        <div class="crash-controls">
+                            <div class="bet-section">
+                                <label>Bet Amount</label>
+                                <input type="number" id="crash-bet" value="10" min="1" max="1000">
+                            </div>
+                            <div class="auto-cashout">
+                                <label>Auto Cash Out</label>
+                                <input type="number" id="crash-auto" value="2" min="1.01" step="0.01">
+                            </div>
+                            <button class="bet-btn" id="crash-bet-btn">Place Bet</button>
+                            <button class="cashout-btn hidden" id="crash-cashout-btn">Cash Out</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mines Game -->
+                <div class="game-container" id="mines-game">
+                    <div class="game-header">
+                        <h2>Mines</h2>
+                        <p>Find the gems, avoid the mines!</p>
+                    </div>
+                    <div class="mines-display">
+                        <div class="mines-config">
+                            <div class="config-group">
+                                <label>Bet Amount</label>
+                                <input type="number" id="mines-bet" value="10" min="1" max="1000">
+                            </div>
+                            <div class="config-group">
+                                <label>Number of Mines</label>
+                                <select id="mines-count">
+                                    <option value="3">3 Mines</option>
+                                    <option value="5" selected>5 Mines</option>
+                                    <option value="10">10 Mines</option>
+                                    <option value="15">15 Mines</option>
+                                </select>
+                            </div>
+                            <button class="bet-btn" id="mines-start-btn">Start Game</button>
+                            <button class="cashout-btn hidden" id="mines-cashout-btn">Cash Out</button>
+                        </div>
+                        <div class="mines-grid" id="mines-grid"></div>
+                        <div class="mines-info">
+                            <div class="current-multiplier">
+                                Multiplier: <span id="mines-multiplier">0.00x</span>
+                            </div>
+                            <div class="potential-win">
+                                Potential Win: <span id="mines-potential">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wheel Game -->
+                <div class="game-container" id="wheel-game">
+                    <div class="game-header">
+                        <h2>Wheel</h2>
+                        <p>Spin the wheel and win big!</p>
+                    </div>
+                    <div class="wheel-display">
+                        <div class="wheel-container">
+                            <div class="wheel-pointer"></div>
+                            <canvas id="wheel-canvas"></canvas>
+                        </div>
+                        <div class="wheel-controls">
+                            <div class="bet-options">
+                                <div class="bet-option" data-multiplier="2" data-color="red">
+                                    <div class="color-indicator red"></div>
+                                    <span>2x</span>
+                                    <input type="number" value="0" min="0">
+                                </div>
+                                <div class="bet-option" data-multiplier="3" data-color="green">
+                                    <div class="color-indicator green"></div>
+                                    <span>3x</span>
+                                    <input type="number" value="0" min="0">
+                                </div>
+                                <div class="bet-option" data-multiplier="5" data-color="blue">
+                                    <div class="color-indicator blue"></div>
+                                    <span>5x</span>
+                                    <input type="number" value="0" min="0">
+                                </div>
+                                <div class="bet-option" data-multiplier="50" data-color="gold">
+                                    <div class="color-indicator gold"></div>
+                                    <span>50x</span>
+                                    <input type="number" value="0" min="0">
+                                </div>
+                            </div>
+                            <button class="bet-btn" id="wheel-spin-btn">Spin Wheel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Toast Notifications -->
+        <div class="toast-container" id="toast-container"></div>
+
+        <!-- Deposit Modal -->
+        <div class="modal hidden" id="deposit-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Deposit SOL</h3>
+                    <button class="close-btn" id="close-deposit">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="deposit-address">
+                        <label>Send SOL to this address:</label>
+                        <div class="address-container">
+                            <input type="text" id="deposit-address" readonly value="AatBYUNhL3HbnrpBfMxwxbTmRYwzL1jU8YFtkFjAkSQt">
+                            <button class="copy-btn" id="copy-address">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="qr-code">
+                        <div id="qr-placeholder">
+                            <i class="fas fa-qrcode"></i>
+                            <p>QR Code for easy scanning</p>
+                        </div>
+                    </div>
+                    <div class="deposit-info">
+                        <p><strong>Minimum deposit:</strong> 0.01 SOL</p>
+                        <p><strong>Network:</strong> Solana Mainnet</p>
+                        <p>Funds will appear in your balance after 1 confirmation</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawal Modal -->
+        <div class="modal hidden" id="withdraw-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Withdraw SOL</h3>
+                    <button class="close-btn" id="close-withdraw">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="withdraw-form">
+                        <div class="form-group">
+                            <label>Withdrawal Address</label>
+                            <input type="text" id="withdraw-address" placeholder="Enter SOL address">
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (SOL)</label>
+                            <input type="number" id="withdraw-amount" placeholder="0.00" min="0.01" step="0.01">
+                            <div class="balance-info">
+                                Available: <span id="available-balance">0.00</span> SOL
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Network Fee: 0.000005 SOL</label>
+                        </div>
+                        <button class="withdraw-submit-btn" id="withdraw-submit">
+                            <i class="fas fa-paper-plane"></i>
+                            Withdraw SOL
+                        </button>
+                    </div>
+                    <div class="withdraw-info">
+                        <p><strong>Minimum withdrawal:</strong> 0.01 SOL</p>
+                        <p><strong>Processing time:</strong> 1-5 minutes</p>
+                        <p>Double-check your address before confirming</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wallet Connection Status -->
+        <div class="wallet-status hidden" id="wallet-status">
+            <div class="status-content">
+                <i class="fas fa-wallet"></i>
+                <span id="wallet-address"></span>
+                <button class="disconnect-btn" id="disconnect-wallet">Disconnect</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
