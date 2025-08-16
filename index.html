@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 </head>
 <body>
     <div class="app">
@@ -33,8 +34,20 @@
                 <div class="wallet">
                     <div class="balance">
                         <i class="fas fa-coins"></i>
-                        <span id="balance">1000.00</span>
+                        <span id="balance">0.00</span> SOL
                     </div>
+                    <button class="wallet-btn" id="connect-wallet">
+                        <i class="fas fa-wallet"></i>
+                        Connect Wallet
+                    </button>
+                    <button class="wallet-btn hidden" id="deposit-btn">
+                        <i class="fas fa-plus"></i>
+                        Deposit
+                    </button>
+                    <button class="wallet-btn hidden" id="withdraw-btn">
+                        <i class="fas fa-minus"></i>
+                        Withdraw
+                    </button>
                 </div>
             </div>
         </header>
@@ -148,6 +161,84 @@
 
         <!-- Toast Notifications -->
         <div class="toast-container" id="toast-container"></div>
+
+        <!-- Deposit Modal -->
+        <div class="modal hidden" id="deposit-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Deposit SOL</h3>
+                    <button class="close-btn" id="close-deposit">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="deposit-address">
+                        <label>Send SOL to this address:</label>
+                        <div class="address-container">
+                            <input type="text" id="deposit-address" readonly value="9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM">
+                            <button class="copy-btn" id="copy-address">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="qr-code">
+                        <div id="qr-placeholder">
+                            <i class="fas fa-qrcode"></i>
+                            <p>QR Code for easy scanning</p>
+                        </div>
+                    </div>
+                    <div class="deposit-info">
+                        <p><strong>Minimum deposit:</strong> 0.01 SOL</p>
+                        <p><strong>Network:</strong> Solana Mainnet</p>
+                        <p>Funds will appear in your balance after 1 confirmation</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawal Modal -->
+        <div class="modal hidden" id="withdraw-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Withdraw SOL</h3>
+                    <button class="close-btn" id="close-withdraw">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="withdraw-form">
+                        <div class="form-group">
+                            <label>Withdrawal Address</label>
+                            <input type="text" id="withdraw-address" placeholder="Enter SOL address">
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (SOL)</label>
+                            <input type="number" id="withdraw-amount" placeholder="0.00" min="0.01" step="0.01">
+                            <div class="balance-info">
+                                Available: <span id="available-balance">0.00</span> SOL
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Network Fee: 0.000005 SOL</label>
+                        </div>
+                        <button class="withdraw-submit-btn" id="withdraw-submit">
+                            <i class="fas fa-paper-plane"></i>
+                            Withdraw SOL
+                        </button>
+                    </div>
+                    <div class="withdraw-info">
+                        <p><strong>Minimum withdrawal:</strong> 0.01 SOL</p>
+                        <p><strong>Processing time:</strong> 1-5 minutes</p>
+                        <p>Double-check your address before confirming</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wallet Connection Status -->
+        <div class="wallet-status hidden" id="wallet-status">
+            <div class="status-content">
+                <i class="fas fa-wallet"></i>
+                <span id="wallet-address"></span>
+                <button class="disconnect-btn" id="disconnect-wallet">Disconnect</button>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
