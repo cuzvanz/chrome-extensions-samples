@@ -1,0 +1,288 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Flash Loan Bot – Mainnet Caller</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+    <style>
+      body { font-family: ui-sans-serif, system-ui; background:#0b1220; color:#e5e7eb; padding:24px; }
+      button,input { padding:10px 14px; border-radius:10px; border:0; }
+      button { background:#10b981; color:#042f2e; font-weight:700; cursor:pointer; }
+      button:disabled { background:#374151; color:#9ca3af; cursor:not-allowed; }
+      input { background:#111827; color:#e5e7eb; width:220px; }
+      .row { display:flex; gap:12px; align-items:center; margin:10px 0; }
+      .card { max-width:720px; background:#0f172a; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:20px; margin-bottom:20px; }
+      .muted { opacity:.75; font-size:12px; }
+      .warning { background:#7f1d1d; border:1px solid #dc2626; padding:15px; border-radius:10px; margin-bottom:20px; }
+      .success { color:#10b981; }
+      .error { color:#ef4444; }
+      code { background:rgba(255,255,255,.08); padding:2px 6px; border-radius:6px; }
+      #log { max-width:400px; word-wrap:break-word; }
+    </style>
+  </head>
+  <body>
+    <div class="warning">
+      <h3>⚠️ EXTREME RISK WARNING ⚠️</h3>
+      <p><strong>This is experimental DeFi software that can result in total loss of funds.</strong></p>
+      <ul>
+        <li>Flash loans can fail and cost gas fees</li>
+        <li>Arbitrage opportunities are rare and competitive</li>
+        <li>Smart contract bugs can drain funds</li>
+        <li>Only use amounts you can afford to lose completely</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Flash Loan Bot — Mainnet Caller</h2>
+      <p class="muted">Connect your wallet (MetaMask recommended). Never share your private keys or mnemonic phrases.</p>
+
+      <div class="row">
+        <button id="connect">Connect Wallet</button>
+        <div id="status">Not connected</div>
+      </div>
+
+      <div class="row">
+        <label>Network:</label>
+        <div id="network">Not detected</div>
+      </div>
+
+      <div class="row">
+        <label>Balance:</label>
+        <div id="balance">0 ETH</div>
+      </div>
+
+      <div class="row">
+        <label>Amount (ETH):</label>
+        <input id="amount" type="number" step="0.001" min="0.001" value="0.001" max="0.01">
+      </div>
+
+      <div class="row">
+        <label>Pool fee (basis points):</label>
+        <input id="fee" type="number" step="1" min="500" value="3000">
+        <span class="muted">(3000 = 0.3%)</span>
+      </div>
+
+      <div class="row">
+        <label>Contract Address:</label>
+        <input id="contractAddr" type="text" value="0x" style="width:300px;" placeholder="Your deployed contract address">
+      </div>
+
+      <div class="row">
+        <button id="run" disabled>Execute Flash Loan</button>
+        <button id="simulate">Simulate (Dry Run)</button>
+      </div>
+
+      <div class="row">
+        <div id="log" class="muted"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>How to Use Safely</h3>
+      <ol>
+        <li>Deploy the flash loan contract below to mainnet</li>
+        <li>Fund the contract with a small amount of ETH for gas</li>
+        <li>Enter the deployed contract address above</li>
+        <li>Start with tiny amounts (0.001 ETH)</li>
+        <li>Test on testnets first</li>
+      </ol>
+    </div>
+
+    <script>
+      // Mainnet configuration
+      const MAINNET_CHAIN_ID = 1;
+      const MAINNET_RPC = "https://eth-mainnet.g.alchemy.com/v2/your-api-key";
+      
+      // Contract ABI for flash loan bot
+      const CONTRACT_ABI = [
+        {
+          "type": "function",
+          "name": "executeFlashLoan",
+          "stateMutability": "payable",
+          "inputs": [
+            {"name": "amount", "type": "uint256"},
+            {"name": "poolFee", "type": "uint24"}
+          ],
+          "outputs": []
+        },
+        {
+          "type": "function",
+          "name": "withdraw",
+          "stateMutability": "nonpayable",
+          "inputs": [],
+          "outputs": []
+        }
+      ];
+
+      let provider, signer, userAddress, contract;
+
+      // DOM elements
+      const connectBtn = document.getElementById('connect');
+      const runBtn = document.getElementById('run');
+      const simulateBtn = document.getElementById('simulate');
+      const statusDiv = document.getElementById('status');
+      const networkDiv = document.getElementById('network');
+      const balanceDiv = document.getElementById('balance');
+      const logDiv = document.getElementById('log');
+      const amountInput = document.getElementById('amount');
+      const feeInput = document.getElementById('fee');
+      const contractAddrInput = document.getElementById('contractAddr');
+
+      function log(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+        logDiv.innerHTML = `<span class="${className}">[${timestamp}] ${message}</span>`;
+        console.log(`[${timestamp}] ${message}`);
+      }
+
+      async function connectWallet() {
+        try {
+          if (typeof window.ethereum === 'undefined') {
+            throw new Error('MetaMask not installed. Please install MetaMask to continue.');
+          }
+
+          // Request account access
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          
+          provider = new ethers.BrowserProvider(window.ethereum);
+          signer = await provider.getSigner();
+          userAddress = await signer.getAddress();
+
+          // Check if we're on mainnet
+          const network = await provider.getNetwork();
+          if (Number(network.chainId) !== MAINNET_CHAIN_ID) {
+            throw new Error(`Please switch to Ethereum Mainnet. Current network: ${network.name}`);
+          }
+
+          // Update UI
+          statusDiv.textContent = `Connected: ${userAddress.slice(0,6)}...${userAddress.slice(-4)}`;
+          statusDiv.className = 'success';
+          networkDiv.textContent = `${network.name} (Chain ID: ${network.chainId})`;
+          
+          await updateBalance();
+          
+          connectBtn.textContent = 'Connected';
+          connectBtn.disabled = true;
+          runBtn.disabled = false;
+
+          log('Wallet connected successfully', 'success');
+
+        } catch (error) {
+          log(`Connection failed: ${error.message}`, 'error');
+          statusDiv.textContent = 'Connection failed';
+          statusDiv.className = 'error';
+        }
+      }
+
+      async function updateBalance() {
+        try {
+          const balance = await provider.getBalance(userAddress);
+          const ethBalance = ethers.formatEther(balance);
+          balanceDiv.textContent = `${parseFloat(ethBalance).toFixed(4)} ETH`;
+        } catch (error) {
+          balanceDiv.textContent = 'Error loading balance';
+        }
+      }
+
+      async function executeFlashLoan(simulate = false) {
+        try {
+          if (!signer) {
+            throw new Error('Wallet not connected');
+          }
+
+          const contractAddress = contractAddrInput.value.trim();
+          if (!ethers.isAddress(contractAddress)) {
+            throw new Error('Invalid contract address');
+          }
+
+          const amount = amountInput.value;
+          const fee = feeInput.value;
+
+          if (!amount || parseFloat(amount) <= 0) {
+            throw new Error('Invalid amount');
+          }
+
+          if (!fee || parseInt(fee) < 500) {
+            throw new Error('Pool fee must be at least 500 (0.05%)');
+          }
+
+          const amountWei = ethers.parseEther(amount);
+          const poolFee = parseInt(fee);
+
+          log(`${simulate ? 'Simulating' : 'Executing'} flash loan: ${amount} ETH, Fee: ${fee}`, 'info');
+
+          // Create contract instance
+          contract = new ethers.Contract(contractAddress, CONTRACT_ABI, signer);
+
+          if (simulate) {
+            // Estimate gas for simulation
+            const gasEstimate = await contract.executeFlashLoan.estimateGas(amountWei, poolFee, {
+              value: ethers.parseEther("0.01") // Small amount for gas
+            });
+            
+            log(`Simulation successful. Estimated gas: ${gasEstimate.toString()}`, 'success');
+            return;
+          }
+
+          // Execute the actual transaction
+          const tx = await contract.executeFlashLoan(amountWei, poolFee, {
+            value: ethers.parseEther("0.01"), // Gas money
+            gasLimit: 500000
+          });
+
+          log(`Transaction sent: ${tx.hash}`, 'info');
+          log('Waiting for confirmation...', 'info');
+
+          const receipt = await tx.wait();
+          
+          if (receipt.status === 1) {
+            log(`Transaction confirmed! Block: ${receipt.blockNumber}`, 'success');
+            await updateBalance();
+          } else {
+            throw new Error('Transaction failed');
+          }
+
+        } catch (error) {
+          log(`${simulate ? 'Simulation' : 'Execution'} failed: ${error.message}`, 'error');
+          
+          if (error.message.includes('insufficient funds')) {
+            log('Insufficient ETH for gas fees', 'error');
+          } else if (error.message.includes('execution reverted')) {
+            log('Contract execution reverted - check arbitrage conditions', 'error');
+          }
+        }
+      }
+
+      // Event listeners
+      connectBtn.addEventListener('click', connectWallet);
+      runBtn.addEventListener('click', () => executeFlashLoan(false));
+      simulateBtn.addEventListener('click', () => executeFlashLoan(true));
+
+      // Auto-connect if already authorized
+      window.addEventListener('load', async () => {
+        if (typeof window.ethereum !== 'undefined') {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            await connectWallet();
+          }
+        }
+      });
+
+      // Listen for account changes
+      if (typeof window.ethereum !== 'undefined') {
+        window.ethereum.on('accountsChanged', (accounts) => {
+          if (accounts.length === 0) {
+            location.reload();
+          } else {
+            connectWallet();
+          }
+        });
+
+        window.ethereum.on('chainChanged', () => {
+          location.reload();
+        });
+      }
+    </script>
+  </body>
+</html>
